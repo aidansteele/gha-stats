@@ -1,10 +1,13 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"github.com/aidansteele/gha-stats/toposort"
+	"github.com/sevlyar/go-daemon"
 	"github.com/shirou/gopsutil/v3/process"
+	"os"
 	"sort"
 	"time"
 )
@@ -20,19 +23,58 @@ type snapshot struct {
 }
 
 func main() {
-	for {
-		time.Sleep(time.Second)
-		dump()
+	dctx := &daemon.Context{
+		PidFileName: "/tmp/gha.pid",
+		//PidFilePerm: 0,
+		LogFileName: "/tmp/gha.log",
+		//LogFilePerm: 0,
+		WorkDir: "./",
+		//Chroot:      "",
+		//Env:         nil,
+		//Args:        nil,
+		//Credential: &syscall.Credential{
+		//	Uid:         0,
+		//	Gid:         0,
+		//	Groups:      nil,
+		//	NoSetGroups: false,
+		//},
+		//Umask: 0,
 	}
-}
 
-func dump() {
-	procs, err := process.Processes()
+	d, err := dctx.Reborn()
 	if err != nil {
 		panic(err)
 	}
 
-	snapshots := make([]snapshot, len(procs))
+	if d != nil {
+		fmt.Printf("i am the parent (pid=%d) and my child is %d. goodbye\n", os.Getpid(), d.Pid)
+		return
+	}
+
+	defer dctx.Release()
+
+	ctx := context.Background()
+
+	for {
+		time.Sleep(time.Second)
+
+		snap, err := getSnapshot(ctx)
+		if err != nil {
+			panic(err)
+		}
+
+		j, _ := json.Marshal(snap)
+		fmt.Fprintln(os.Stderr, string(j))
+	}
+}
+
+func getSnapshot(ctx context.Context) ([]snapshot, error) {
+	procs, err := process.Processes()
+	if err != nil {
+		return nil, fmt.Errorf("getting processes: %w", err)
+	}
+
+	slice := make([]snapshot, len(procs))
 	byPid := make(map[int32]*snapshot, len(procs))
 	topo := toposort.NewGraph[int32](len(procs))
 
@@ -44,7 +86,7 @@ func dump() {
 		mem, _ := proc.MemoryPercent()
 		exe, _ := proc.Exe()
 
-		snapshots[idx] = snapshot{
+		slice[idx] = snapshot{
 			Pid:    pid,
 			Ppid:   ppid,
 			Name:   name,
@@ -53,27 +95,27 @@ func dump() {
 			MemPct: mem,
 		}
 
-		byPid[pid] = &snapshots[idx]
+		byPid[pid] = &slice[idx]
 		topo.AddNodes(pid)
 		topo.AddEdge(pid, ppid)
 	}
 
 	sorted, ok := topo.Toposort()
 	if !ok {
-		panic("topo failed")
+		return nil, fmt.Errorf("doing topo sort")
 	}
 
 	for _, pid := range sorted {
 
 		snap := byPid[pid]
 		if snap == nil {
-			fmt.Printf("didn't find pid %d\n", pid)
+			fmt.Fprintf(os.Stderr, "didn't find pid %d\n", pid)
 			continue
 		}
 
 		parent := byPid[snap.Ppid]
 		if parent == nil {
-			fmt.Printf("didn't find ppid %d\n", parent)
+			fmt.Fprintf(os.Stderr, "didn't find ppid %d\n", parent)
 			continue
 		}
 
@@ -81,10 +123,9 @@ func dump() {
 		parent.MemCumul += snap.MemCumul
 	}
 
-	sort.Slice(snapshots, func(i, j int) bool {
-		return snapshots[i].MemCumul < snapshots[j].MemCumul
+	sort.Slice(slice, func(i, j int) bool {
+		return slice[i].MemCumul < slice[j].MemCumul
 	})
 
-	j, _ := json.Marshal(snapshots)
-	fmt.Println(string(j))
+	return slice, nil
 }
