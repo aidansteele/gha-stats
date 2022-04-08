@@ -23,6 +23,11 @@ type snapshot struct {
 }
 
 func main() {
+	if os.Args[1] == "start" {
+		fmt.Println("hello world")
+		return
+	}
+
 	dctx := &daemon.Context{
 		PidFileName: "/tmp/gha.pid",
 		//PidFilePerm: 0,
