@@ -7,8 +7,10 @@ import (
 	"github.com/aidansteele/gha-stats/toposort"
 	"github.com/sevlyar/go-daemon"
 	"github.com/shirou/gopsutil/v3/process"
+	"io/ioutil"
 	"os"
 	"sort"
+	"strconv"
 	"time"
 )
 
@@ -22,12 +24,7 @@ type snapshot struct {
 	MemCumul float32
 }
 
-func main() {
-	if os.Args[1] == "start" {
-		fmt.Println("hello world")
-		return
-	}
-
+func start() (*daemon.Context, bool) {
 	dctx := &daemon.Context{
 		PidFileName: "/tmp/gha.pid",
 		//PidFilePerm: 0,
@@ -51,13 +48,10 @@ func main() {
 		panic(err)
 	}
 
-	if d != nil {
-		fmt.Printf("i am the parent (pid=%d) and my child is %d. goodbye\n", os.Getpid(), d.Pid)
-		return
-	}
+	return dctx, d != nil
+}
 
-	defer dctx.Release()
-
+func run() {
 	ctx := context.Background()
 
 	for {
@@ -70,6 +64,54 @@ func main() {
 
 		j, _ := json.Marshal(snap)
 		fmt.Fprintln(os.Stderr, string(j))
+	}
+}
+
+func stop() {
+	fmt.Println("i stopped")
+
+	pidBytes, err := ioutil.ReadFile("/tmp/gha.pid")
+	if err != nil {
+		panic(err)
+	}
+
+	pid, _ := strconv.Atoi(string(pidBytes))
+	fmt.Printf("pid = %d\n", pid)
+
+	proc, err := os.FindProcess(pid)
+	if err != nil {
+		panic(err)
+	}
+
+	err = proc.Kill()
+	if err != nil {
+		panic(err)
+	}
+
+	log, err := ioutil.ReadFile("/tmp/gha.log")
+	if err != nil {
+		panic(err)
+	}
+
+	fmt.Println(string(log))
+
+	fmt.Println("i logged ^")
+}
+
+func main() {
+	switch os.Args[1] {
+	case "start":
+		dctx, parent := start()
+		if parent {
+			fmt.Fprintf(os.Stderr, "i am the parent (pid=%d). goodbye\n", os.Getpid())
+		} else {
+			defer dctx.Release()
+			run()
+		}
+	case "stop":
+		stop()
+	default:
+		fmt.Println("unrecognised command " + os.Args[1])
 	}
 }
 
