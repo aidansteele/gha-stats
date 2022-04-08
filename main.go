@@ -51,11 +51,11 @@ func start() (*daemon.Context, bool) {
 	return dctx, d != nil
 }
 
-func run() {
+func run(interval time.Duration) {
 	ctx := context.Background()
 
 	for {
-		time.Sleep(time.Second)
+		time.Sleep(interval)
 
 		snap, err := getSnapshot(ctx)
 		if err != nil {
@@ -102,11 +102,17 @@ func main() {
 	switch os.Args[1] {
 	case "start":
 		dctx, parent := start()
+
+		interval, err := time.ParseDuration(os.Args[2])
+		if err != nil {
+			panic(err)
+		}
+
 		if parent {
 			fmt.Fprintf(os.Stderr, "i am the parent (pid=%d). goodbye\n", os.Getpid())
 		} else {
 			defer dctx.Release()
-			run()
+			run(interval)
 		}
 	case "stop":
 		stop()
@@ -162,7 +168,7 @@ func getSnapshot(ctx context.Context) ([]snapshot, error) {
 
 		parent := byPid[snap.Ppid]
 		if parent == nil {
-			fmt.Fprintf(os.Stderr, "didn't find ppid %d\n", parent)
+			fmt.Fprintf(os.Stderr, "didn't find ppid %d\n", snap.Ppid)
 			continue
 		}
 
