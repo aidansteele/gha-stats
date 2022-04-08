@@ -1,4 +1,4 @@
-name: goreleaser
+name: e2e
 
 on:
   pull_request:
@@ -8,9 +8,9 @@ jobs:
   e2e:
     runs-on: ubuntu-latest
     steps:
-      - uses: ./
-
       - uses: actions/checkout@v2
+
+      - uses: ./
 
       - uses: actions/setup-go@v2
         with:
