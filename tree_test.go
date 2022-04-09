@@ -18,6 +18,11 @@ type snapshotTree struct {
 	children []*snapshotTree
 }
 
+type procMapEntry struct {
+	processIdentity
+	snapshots []*snapshot
+}
+
 func TestTree(t *testing.T) {
 	arr := []snapshot{}
 	err := json.Unmarshal([]byte(payload), &arr)
@@ -82,13 +87,9 @@ func TestChart(t *testing.T) {
 		}),
 	)
 
-	moments := [][]snapshot{}
-	names := []string{}
-
-	byPid := map[int32][]*snapshot{}
-	allPids := []int32{}
-
 	durLabel := time.Duration(0)
+	timeLabels := []string{}
+	procs := map[int32]*procMapEntry{}
 
 	lines := strings.Split(payload2, "\n")
 	for _, line := range lines {
@@ -98,68 +99,50 @@ func TestChart(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		sort.Slice(moment, func(i, j int) bool {
-			return moment[i].Name < moment[j].Name
-		})
-
 		for _, s := range moment {
 			s := s
-			byPid[s.Pid] = append(byPid[s.Pid], &s)
-			allPids = append(allPids, s.Pid)
+			if pme, ok := procs[s.Pid]; ok {
+				pme.snapshots = append(pme.snapshots, &s)
+			} else {
+				procs[s.Pid] = &procMapEntry{
+					processIdentity: s.processIdentity,
+					snapshots:       []*snapshot{&s},
+				}
+			}
 		}
 
-		moments = append(moments, moment)
-		names = append(names, durLabel.String())
+		timeLabels = append(timeLabels, durLabel.String())
 		durLabel += 5 * time.Second
 	}
 
-	bar.SetXAxis(names)
+	bar.SetXAxis(timeLabels)
 
 	var runnerWorkerPid int32 = 0
-	for pid, snapshots := range byPid {
-		if snapshots[0].Name == "Runner.Worker" {
-			runnerWorkerPid = pid
+	for _, proc := range procs {
+		if proc.Name == "Runner.Worker" {
+			runnerWorkerPid = proc.Pid
 			break
 		}
 	}
 
-	deletes := []int32{}
-	for _, pid := range allPids {
-		snaps := byPid[pid]
-		if len(snaps) == 0 {
-			continue
-		}
+	otherVals := aggregateUsageOutsideWorker(procs, runnerWorkerPid)
+	bar.AddSeries("(other)", otherVals)
 
-		s := snaps[0]
-		ppid := s.Ppid
-		for ppid != runnerWorkerPid && ppid != 0 {
-			parentSnaps := byPid[ppid]
-			if len(parentSnaps) == 0 {
-				break
-			}
+	descendants := descendantPids(procs, runnerWorkerPid)
 
-			ppid = parentSnaps[0].Ppid
-		}
+	sort.Slice(descendants, func(i, j int) bool {
+		ipid, jpid := descendants[i], descendants[j]
+		return procs[ipid].Name < procs[jpid].Name
+	})
 
-		if ppid == 0 {
-			deletes = append(deletes, pid)
-		}
-	}
-
-	aggregateUsageOutsideWorker(byPid, runnerWorkerPid, bar)
-
-	for _, pid := range deletes {
-		delete(byPid, pid)
-	}
-
-	for _, snapshots := range byPid {
-		s := snapshots[0]
-		name := fmt.Sprintf("%s (%d)", s.Name, s.Pid)
+	for _, pid := range descendants {
+		proc := procs[pid]
+		name := fmt.Sprintf("%s (%d)", proc.Name, proc.Pid)
 
 		vals := []opts.BarData{}
 
-		for _, s2 := range snapshots {
-			vals = append(vals, opts.BarData{Name: name, Value: s2.MemPct})
+		for _, s := range proc.snapshots {
+			vals = append(vals, opts.BarData{Name: name, Value: s.MemPct})
 		}
 
 		bar.AddSeries(name, vals)
@@ -175,13 +158,13 @@ func TestChart(t *testing.T) {
 	bar.Render(f)
 }
 
-func descendantPids(root int32, snapshots []*snapshot, byPid map[int32]*snapshot) []int32 {
+func descendantPids(procs map[int32]*procMapEntry, root int32) []int32 {
 	descendants := []int32{}
 
-	for _, s := range snapshots {
+	for _, s := range procs {
 		ppid := s.Ppid
 		for ppid != root && ppid != 0 {
-			parent := byPid[ppid]
+			parent := procs[ppid]
 			if parent == nil {
 				break
 			}
@@ -197,17 +180,17 @@ func descendantPids(root int32, snapshots []*snapshot, byPid map[int32]*snapshot
 	return descendants
 }
 
-func aggregateUsageOutsideWorker(byPid map[int32][]*snapshot, runnerWorkerPid int32, bar *charts.Bar) {
-	name := "(other)"
+func aggregateUsageOutsideWorker(byPid map[int32]*procMapEntry, runnerWorkerPid int32) []opts.BarData {
 	otherVals := []opts.BarData{}
 
-	var initPid int32 = 1
+	initProc := byPid[1]
+	runnerWorkerProc := byPid[runnerWorkerPid]
 
-	for idx, initSnapshot := range byPid[initPid] {
-		runnerWorkerSnapshot := byPid[runnerWorkerPid][idx]
+	for idx, initSnapshot := range initProc.snapshots {
+		runnerWorkerSnapshot := runnerWorkerProc.snapshots[idx]
 		delta := initSnapshot.MemCumul - runnerWorkerSnapshot.MemCumul
 		otherVals = append(otherVals, opts.BarData{
-			Name:  name,
+			Name:  "(other)",
 			Value: delta,
 			ItemStyle: &opts.ItemStyle{
 				Color: "grey",
@@ -215,7 +198,7 @@ func aggregateUsageOutsideWorker(byPid map[int32][]*snapshot, runnerWorkerPid in
 		})
 	}
 
-	bar.AddSeries(name, otherVals)
+	return otherVals
 }
 
 var payload2 = `[{"Pid":399,"Ppid":2,"Name":"kmpath_handlerd","Exe":"","CpuPct":0,"MemPct":0,"MemCumul":0},{"Pid":614,"Ppid":2,"Name":"ext4-rsv-conver","Exe":"","CpuPct":0,"MemPct":0,"MemCumul":0},{"Pid":3,"Ppid":2,"Name":"rcu_gp","Exe":"","CpuPct":0,"MemPct":0,"MemCumul":0},{"Pid":4,"Ppid":2,"Name":"rcu_par_gp","Exe":"","CpuPct":0,"MemPct":0,"MemCumul":0},{"Pid":5,"Ppid":2,"Name":"kworker/0:0-events","Exe":"","CpuPct":0,"MemPct":0,"MemCumul":0},{"Pid":6,"Ppid":2,"Name":"kworker/0:0H-kblockd","Exe":"","CpuPct":0,"MemPct":0,"MemCumul":0},{"Pid":7,"Ppid":2,"Name":"kworker/0:1-cgroup_destroy","Exe":"","CpuPct":0.015291309722923566,"MemPct":0,"MemCumul":0},{"Pid":8,"Ppid":2,"Name":"kworker/u4:0-events_power_efficient","Exe":"","CpuPct":0.19878646192168167,"MemPct":0,"MemCumul":0},{"Pid":9,"Ppid":2,"Name":"mm_percpu_wq","Exe":"","CpuPct":0,"MemPct":0,"MemCumul":0},{"Pid":10,"Ppid":2,"Name":"rcu_tasks_rude_","Exe":"","CpuPct":0,"MemPct":0,"MemCumul":0},{"Pid":11,"Ppid":2,"Name":"rcu_tasks_trace","Exe":"","CpuPct":0,"MemPct":0,"MemCumul":0},{"Pid":12,"Ppid":2,"Name":"ksoftirqd/0","Exe":"","CpuPct":0.0917467097539013,"MemPct":0,"MemCumul":0},{"Pid":13,"Ppid":2,"Name":"rcu_sched","Exe":"","CpuPct":0.24465730981620387,"MemPct":0,"MemCumul":0},{"Pid":14,"Ppid":2,"Name":"migration/0","Exe":"","CpuPct":0,"MemPct":0,"MemCumul":0},{"Pid":15,"Ppid":2,"Name":"cpuhp/0","Exe":"","CpuPct":0,"MemPct":0,"MemCumul":0},{"Pid":16,"Ppid":2,"Name":"cpuhp/1","Exe":"","CpuPct":0,"MemPct":0,"MemCumul":0},{"Pid":17,"Ppid":2,"Name":"migration/1","Exe":"","CpuPct":0.6728018345849353,"MemPct":0,"MemCumul":0},{"Pid":18,"Ppid":2,"Name":"ksoftirqd/1","Exe":"","CpuPct":0.1070364253820791,"MemPct":0,"MemCumul":0},{"Pid":19,"Ppid":2,"Name":"kworker/1:0-events","Exe":"","CpuPct":0,"MemPct":0,"MemCumul":0},{"Pid":20,"Ppid":2,"Name":"kworker/1:0H-events_highpri","Exe":"","CpuPct":0,"MemPct":0,"MemCumul":0},{"Pid":21,"Ppid":2,"Name":"kdevtmpfs","Exe":"","CpuPct":0,"MemPct":0,"MemCumul":0},{"Pid":22,"Ppid":2,"Name":"netns","Exe":"","CpuPct":0,"MemPct":0,"MemCumul":0},{"Pid":23,"Ppid":2,"Name":"inet_frag_wq","Exe":"","CpuPct":0,"MemPct":0,"MemCumul":0},{"Pid":24,"Ppid":2,"Name":"kauditd","Exe":"","CpuPct":0,"MemPct":0,"MemCumul":0},{"Pid":25,"Ppid":2,"Name":"khungtaskd","Exe":"","CpuPct":0,"MemPct":0,"MemCumul":0},{"Pid":26,"Ppid":2,"Name":"oom_reaper","Exe":"","CpuPct":0,"MemPct":0,"MemCumul":0},{"Pid":27,"Ppid":2,"Name":"writeback","Exe":"","CpuPct":0,"MemPct":0,"MemCumul":0},{"Pid":28,"Ppid":2,"Name":"kcompactd0","Exe":"","CpuPct":0.015290570005261173,"MemPct":0,"MemCumul":0},{"Pid":29,"Ppid":2,"Name":"ksmd","Exe":"","CpuPct":0,"MemPct":0,"MemCumul":0},{"Pid":30,"Ppid":2,"Name":"khugepaged","Exe":"","CpuPct":0,"MemPct":0,"MemCumul":0},{"Pid":76,"Ppid":2,"Name":"kintegrityd","Exe":"","CpuPct":0,"MemPct":0,"MemCumul":0},{"Pid":77,"Ppid":2,"Name":"kblockd","Exe":"","CpuPct":0,"MemPct":0,"MemCumul":0},{"Pid":78,"Ppid":2,"Name":"blkcg_punt_bio","Exe":"","CpuPct":0,"MemPct":0,"MemCumul":0},{"Pid":79,"Ppid":2,"Name":"tpm_dev_wq","Exe":"","CpuPct":0,"MemPct":0,"MemCumul":0},{"Pid":80,"Ppid":2,"Name":"ata_sff","Exe":"","CpuPct":0,"MemPct":0,"MemCumul":0},{"Pid":81,"Ppid":2,"Name":"md","Exe":"","CpuPct":0,"MemPct":0,"MemCumul":0},{"Pid":613,"Ppid":2,"Name":"jbd2/sdb1-8","Exe":"","CpuPct":0,"MemPct":0,"MemCumul":0},{"Pid":83,"Ppid":2,"Name":"hv_vmbus_con","Exe":"","CpuPct":0,"MemPct":0,"MemCumul":0},{"Pid":84,"Ppid":2,"Name":"hv_pri_chan","Exe":"","CpuPct":0,"MemPct":0,"MemCumul":0},{"Pid":85,"Ppid":2,"Name":"hv_sub_chan","Exe":"","CpuPct":0,"MemPct":0,"MemCumul":0},{"Pid":86,"Ppid":2,"Name":"devfreq_wq","Exe":"","CpuPct":0,"MemPct":0,"MemCumul":0},{"Pid":87,"Ppid":2,"Name":"watchdogd","Exe":"","CpuPct":0,"MemPct":0,"MemCumul":0},{"Pid":88,"Ppid":2,"Name":"kworker/u4:1-events_unbound","Exe":"","CpuPct":0.06115974336561439,"MemPct":0,"MemCumul":0},{"Pid":89,"Ppid":2,"Name":"kworker/1:1-events","Exe":"","CpuPct":0.04586968836506324,"MemPct":0,"MemCumul":0},{"Pid":90,"Ppid":2,"Name":"kworker/1:1H-kblockd","Exe":"","CpuPct":0.07644927908864506,"MemPct":0,"MemCumul":0},{"Pid":92,"Ppid":2,"Name":"kswapd0","Exe":"","CpuPct":0,"MemPct":0,"MemCumul":0},{"Pid":93,"Ppid":2,"Name":"ecryptfs-kthrea","Exe":"","CpuPct":0,"MemPct":0,"MemCumul":0},{"Pid":95,"Ppid":2,"Name":"kthrotld","Exe":"","CpuPct":0,"MemPct":0,"MemCumul":0},{"Pid":96,"Ppid":2,"Name":"nfit","Exe":"","CpuPct":0,"MemPct":0,"MemCumul":0},{"Pid":97,"Ppid":2,"Name":"nvme-wq","Exe":"","CpuPct":0,"MemPct":0,"MemCumul":0},{"Pid":98,"Ppid":2,"Name":"scsi_eh_0","Exe":"","CpuPct":0,"MemPct":0,"MemCumul":0},{"Pid":99,"Ppid":2,"Name":"kworker/u4:2-events_unbound","Exe":"","CpuPct":0.09315822296498444,"MemPct":0,"MemCumul":0},{"Pid":100,"Ppid":2,"Name":"scsi_tmf_0","Exe":"","CpuPct":0,"MemPct":0,"MemCumul":0},{"Pid":101,"Ppid":2,"Name":"scsi_eh_1","Exe":"","CpuPct":0,"MemPct":0,"MemCumul":0},{"Pid":102,"Ppid":2,"Name":"kworker/u4:3-events_unbound","Exe":"","CpuPct":0.046578781991387166,"MemPct":0,"MemCumul":0},{"Pid":103,"Ppid":2,"Name":"nvme-reset-wq","Exe":"","CpuPct":0,"MemPct":0,"MemCumul":0},{"Pid":104,"Ppid":2,"Name":"nvme-delete-wq","Exe":"","CpuPct":0,"MemPct":0,"MemCumul":0},{"Pid":105,"Ppid":2,"Name":"scsi_tmf_1","Exe":"","CpuPct":0,"MemPct":0,"MemCumul":0},{"Pid":106,"Ppid":2,"Name":"kworker/u4:4-events_unbound","Exe":"","CpuPct":0,"MemPct":0,"MemCumul":0},{"Pid":107,"Ppid":2,"Name":"scsi_eh_2","Exe":"","CpuPct":0,"MemPct":0,"MemCumul":0},{"Pid":108,"Ppid":2,"Name":"scsi_eh_3","Exe":"","CpuPct":0,"MemPct":0,"MemCumul":0},{"Pid":109,"Ppid":2,"Name":"scsi_tmf_2","Exe":"","CpuPct":0,"MemPct":0,"MemCumul":0},{"Pid":110,"Ppid":2,"Name":"scsi_tmf_3","Exe":"","CpuPct":0,"MemPct":0,"MemCumul":0},{"Pid":111,"Ppid":2,"Name":"storvsc_error_w","Exe":"","CpuPct":0,"MemPct":0,"MemCumul":0},{"Pid":112,"Ppid":2,"Name":"scsi_eh_4","Exe":"","CpuPct":0,"MemPct":0,"MemCumul":0},{"Pid":113,"Ppid":2,"Name":"scsi_tmf_4","Exe":"","CpuPct":0,"MemPct":0,"MemCumul":0},{"Pid":114,"Ppid":2,"Name":"storvsc_error_w","Exe":"","CpuPct":0,"MemPct":0,"MemCumul":0},{"Pid":115,"Ppid":2,"Name":"scsi_eh_5","Exe":"","CpuPct":0,"MemPct":0,"MemCumul":0},{"Pid":116,"Ppid":2,"Name":"scsi_tmf_5","Exe":"","CpuPct":0,"MemPct":0,"MemCumul":0},{"Pid":117,"Ppid":2,"Name":"kworker/u4:5-ext4-rsv-conversion","Exe":"","CpuPct":0.21736062764841704,"MemPct":0,"MemCumul":0},{"Pid":118,"Ppid":2,"Name":"kworker/u4:6","Exe":"","CpuPct":0,"MemPct":0,"MemCumul":0},{"Pid":119,"Ppid":2,"Name":"storvsc_error_w","Exe":"","CpuPct":0,"MemPct":0,"MemCumul":0},{"Pid":120,"Ppid":2,"Name":"storvsc_error_w","Exe":"","CpuPct":0,"MemPct":0,"MemCumul":0},{"Pid":121,"Ppid":2,"Name":"vfio-irqfd-clea","Exe":"","CpuPct":0,"MemPct":0,"MemCumul":0},{"Pid":122,"Ppid":2,"Name":"kworker/0:1H-kblockd","Exe":"","CpuPct":0.09315292663176039,"MemPct":0,"MemCumul":0},{"Pid":123,"Ppid":2,"Name":"kworker/1:2-rcu_gp","Exe":"","CpuPct":0,"MemPct":0,"MemCumul":0},{"Pid":124,"Ppid":2,"Name":"mld","Exe":"","CpuPct":0,"MemPct":0,"MemCumul":0},{"Pid":125,"Ppid":2,"Name":"ipv6_addrconf","Exe":"","CpuPct":0,"MemPct":0,"MemCumul":0},{"Pid":134,"Ppid":2,"Name":"kstrp","Exe":"","CpuPct":0,"MemPct":0,"MemCumul":0},{"Pid":137,"Ppid":2,"Name":"zswap-shrink","Exe":"","CpuPct":0,"MemPct":0,"MemCumul":0},{"Pid":138,"Ppid":2,"Name":"kworker/u5:0","Exe":"","CpuPct":0,"MemPct":0,"MemCumul":0},{"Pid":143,"Ppid":2,"Name":"jbd2/sda1-8","Exe":"","CpuPct":0.35708074528154765,"MemPct":0,"MemCumul":0},{"Pid":144,"Ppid":2,"Name":"ext4-rsv-conver","Exe":"","CpuPct":0,"MemPct":0,"MemCumul":0},{"Pid":420,"Ppid":2,"Name":"loop3","Exe":"","CpuPct":0,"MemPct":0,"MemCumul":0},{"Pid":207,"Ppid":2,"Name":"kworker/0:2-events","Exe":"","CpuPct":0.06307984395896483,"MemPct":0,"MemCumul":0},{"Pid":211,"Ppid":2,"Name":"ipmi-msghandler","Exe":"","CpuPct":0,"MemPct":0,"MemCumul":0},{"Pid":212,"Ppid":2,"Name":"kworker/1:3-cgroup_destroy","Exe":"","CpuPct":0,"MemPct":0,"MemCumul":0},{"Pid":419,"Ppid":2,"Name":"loop2","Exe":"","CpuPct":0.11215430552914098,"MemPct":0,"MemCumul":0},{"Pid":251,"Ppid":2,"Name":"hv_balloon","Exe":"","CpuPct":0,"MemPct":0,"MemCumul":0},{"Pid":253,"Ppid":2,"Name":"cryptd","Exe":"","CpuPct":0,"MemPct":0,"MemCumul":0},{"Pid":413,"Ppid":2,"Name":"loop1","Exe":"","CpuPct":0,"MemPct":0,"MemCumul":0},{"Pid":309,"Ppid":2,"Name":"kworker/0:3-cgroup_destroy","Exe":"","CpuPct":0,"MemPct":0,"MemCumul":0},{"Pid":311,"Ppid":2,"Name":"kworker/0:4-ipv6_addrconf","Exe":"","CpuPct":0,"MemPct":0,"MemCumul":0},{"Pid":410,"Ppid":2,"Name":"loop0","Exe":"","CpuPct":0.03204421990936148,"MemPct":0,"MemCumul":0},{"Pid":396,"Ppid":2,"Name":"kaluad","Exe":"","CpuPct":0,"MemPct":0,"MemCumul":0},{"Pid":397,"Ppid":2,"Name":"kmpath_rdacd","Exe":"","CpuPct":0,"MemPct":0,"MemCumul":0},{"Pid":398,"Ppid":2,"Name":"kmpathd","Exe":"","CpuPct":0,"MemPct":0,"MemCumul":0},{"Pid":82,"Ppid":2,"Name":"edac-poller","Exe":"","CpuPct":0,"MemPct":0,"MemCumul":0},{"Pid":752,"Ppid":749,"Name":"chronyd","Exe":"","CpuPct":0,"MemPct":0.0027554668,"MemCumul":0.0027554668},{"Pid":2,"Ppid":0,"Name":"kthreadd","Exe":"","CpuPct":0,"MemPct":0,"MemCumul":0.008041465},{"Pid":297,"Ppid":2,"Name":"bpfilter_umh","Exe":"","CpuPct":0.07884879004609183,"MemPct":0.008041465,"MemCumul":0.008041465},{"Pid":737,"Ppid":1,"Name":"agetty","Exe":"","CpuPct":0,"MemPct":0.025923884,"MemCumul":0.025923884},{"Pid":716,"Ppid":1,"Name":"agetty","Exe":"","CpuPct":0,"MemPct":0.031041179,"MemCumul":0.031041179},{"Pid":698,"Ppid":1,"Name":"atd","Exe":"","CpuPct":0,"MemPct":0.031772222,"MemCumul":0.031772222},{"Pid":749,"Ppid":1,"Name":"chronyd","Exe":"","CpuPct":0.01772494556224056,"MemPct":0.036608346,"MemCumul":0.039363813},{"Pid":663,"Ppid":1,"Name":"cron","Exe":"","CpuPct":0.0177257120261963,"MemPct":0.03986992,"MemCumul":0.03986992},{"Pid":317,"Ppid":1,"Name":"hv_kvp_daemon","Exe":"","CpuPct":0.12817848439884763,"MemPct":0.04279409,"MemCumul":0.04279409},{"Pid":670,"Ppid":1,"Name":"irqbalance","Exe":"","CpuPct":0.05317689213321237,"MemPct":0.05049815,"MemCumul":0.05049815},{"Pid":664,"Ppid":1,"Name":"dbus-daemon","Exe":"","CpuPct":0.07090268283551449,"MemPct":0.06241976,"MemCumul":0.06241976},{"Pid":680,"Ppid":1,"Name":"rsyslogd","Exe":"","CpuPct":0.10635221599230676,"MemPct":0.074228905,"MemCumul":0.074228905},{"Pid":225,"Ppid":1,"Name":"systemd-udevd","Exe":"","CpuPct":0.1734683759761789,"MemPct":0.07940243,"MemCumul":0.07940243},{"Pid":688,"Ppid":1,"Name":"systemd-logind","Exe":"","CpuPct":0.053175700431787085,"MemPct":0.08052711,"MemCumul":0.08052711},{"Pid":753,"Ppid":1,"Name":"sshd","Exe":"","CpuPct":0,"MemPct":0.09632888,"MemCumul":0.09632888},{"Pid":1465,"Ppid":682,"Name":"provjobd","Exe":"","CpuPct":0.13869879732306786,"MemPct":0.10504515,"MemCumul":0.10504515},{"Pid":456,"Ppid":1,"Name":"haveged","Exe":"","CpuPct":0.28839566235251585,"MemPct":0.10616983,"MemCumul":0.10616983},{"Pid":539,"Ppid":1,"Name":"systemd-networkd","Exe":"","CpuPct":0.04884844920189055,"MemPct":0.10616983,"MemCumul":0.10616983},{"Pid":1631,"Ppid":1625,"Name":"git","Exe":"/usr/lib/git-core/git","CpuPct":15.695715186067714,"MemPct":0.110218674,"MemCumul":0.110218674},{"Pid":1551,"Ppid":1,"Name":"gha-stats","Exe":"/usr/bin/gha-stats","CpuPct":0.4672747400498909,"MemPct":0.12523316,"MemCumul":0.12523316},{"Pid":679,"Ppid":1,"Name":"polkitd","Exe":"","CpuPct":0,"MemPct":0.12686394,"MemCumul":0.12686394},{"Pid":657,"Ppid":1,"Name":"accounts-daemon","Exe":"","CpuPct":0.08862878934267765,"MemPct":0.1304067,"MemCumul":0.1304067},{"Pid":786,"Ppid":1,"Name":"ModemManager","Exe":"","CpuPct":0.12407349162127584,"MemPct":0.15638681,"MemCumul":0.15638681},{"Pid":541,"Ppid":1,"Name":"systemd-resolved","Exe":"","CpuPct":0.11397940616543017,"MemPct":0.16965804,"MemCumul":0.16965804},{"Pid":1627,"Ppid":1626,"Name":"git-remote-https","Exe":"/usr/lib/git-core/git-remote-http","CpuPct":2.9515368472596637,"MemPct":0.21768188,"MemCumul":0.21768188},{"Pid":692,"Ppid":1,"Name":"udisksd","Exe":"","CpuPct":0.14180153654085328,"MemPct":0.22330528,"MemCumul":0.22330528},{"Pid":672,"Ppid":1,"Name":"/usr/bin/python3","Exe":"","CpuPct":0.14180456207416492,"MemPct":0.25642714,"MemCumul":0.25642714},{"Pid":1626,"Ppid":1625,"Name":"git","Exe":"/usr/lib/git-core/git","CpuPct":0,"MemPct":0.05122919,"MemCumul":0.26891106},{"Pid":190,"Ppid":1,"Name":"systemd-journald","Exe":"","CpuPct":0.6308000541100476,"MemPct":0.26936096,"MemCumul":0.26936096},{"Pid":906,"Ppid":675,"Name":"php-fpm7.4","Exe":"","CpuPct":0,"MemPct":0.27790853,"MemCumul":0.27790853},{"Pid":907,"Ppid":675,"Name":"php-fpm7.4","Exe":"","CpuPct":0,"MemPct":0.27790853,"MemCumul":0.27790853},{"Pid":929,"Ppid":677,"Name":"php-fpm8.0","Exe":"","CpuPct":0,"MemPct":0.2824635,"MemCumul":0.2824635},{"Pid":928,"Ppid":677,"Name":"php-fpm8.0","Exe":"","CpuPct":0,"MemPct":0.2824635,"MemCumul":0.2824635},{"Pid":910,"Ppid":678,"Name":"php-fpm8.1","Exe":"","CpuPct":0,"MemPct":0.2874683,"MemCumul":0.2874683},{"Pid":909,"Ppid":678,"Name":"php-fpm8.1","Exe":"","CpuPct":0,"MemPct":0.2874683,"MemCumul":0.2874683},{"Pid":400,"Ppid":1,"Name":"multipathd","Exe":"","CpuPct":0.04806642751673675,"MemPct":0.36940128,"MemCumul":0.36940128},{"Pid":889,"Ppid":697,"Name":"python3","Exe":"","CpuPct":1.1909422089766581,"MemPct":0.41641292,"MemCumul":0.41641292},{"Pid":1625,"Ppid":1555,"Name":"git","Exe":"/usr/bin/git","CpuPct":1.4758725620046622,"MemPct":0.05988923,"MemCumul":0.43901896},{"Pid":751,"Ppid":1,"Name":"mono","Exe":"","CpuPct":1.5597916401931735,"MemPct":0.652652,"MemCumul":0.652652},{"Pid":685,"Ppid":1,"Name":"snapd","Exe":"","CpuPct":2.7296931454758093,"MemPct":0.6695785,"MemCumul":0.6695785},{"Pid":697,"Ppid":1,"Name":"python3","Exe":"","CpuPct":0.389953364252361,"MemPct":0.30951205,"MemCumul":0.72592497},{"Pid":705,"Ppid":1,"Name":"containerd","Exe":"","CpuPct":0.49630200244795325,"MemPct":0.7335728,"MemCumul":0.7335728},{"Pid":893,"Ppid":1,"Name":"dockerd","Exe":"","CpuPct":0.7759150931767534,"MemPct":1.0500016,"MemCumul":1.0500016},{"Pid":675,"Ppid":1,"Name":"php-fpm7.4","Exe":"","CpuPct":0.6912956520314898,"MemPct":0.7094484,"MemCumul":1.2652655},{"Pid":1555,"Ppid":1493,"Name":"node","Exe":"/home/runner/runners/2.289.2/externals/node12/bin/node","CpuPct":4.205392812948918,"MemPct":0.832151,"MemCumul":1.2711699},{"Pid":677,"Ppid":1,"Name":"php-fpm8.0","Exe":"","CpuPct":0.6735685954480722,"MemPct":0.72210103,"MemCumul":1.2870281},{"Pid":678,"Ppid":1,"Name":"php-fpm8.1","Exe":"","CpuPct":0.779919766174148,"MemPct":0.7210888,"MemCumul":1.2960255},{"Pid":1493,"Ppid":1475,"Name":"Runner.Worker","Exe":"/home/runner/runners/2.289.2/bin/Runner.Worker","CpuPct":21.819512554606423,"MemPct":1.6052563,"MemCumul":2.8764262},{"Pid":1475,"Ppid":682,"Name":"Runner.Listener","Exe":"/home/runner/runners/2.289.2/bin/Runner.Listener","CpuPct":10.887707447125582,"MemPct":1.3700294,"MemCumul":4.2464557},{"Pid":682,"Ppid":1,"Name":"provisioner","Exe":"","CpuPct":2.9601294744055386,"MemPct":1.1889559,"MemCumul":5.540457},{"Pid":1,"Ppid":0,"Name":"systemd","Exe":"","CpuPct":3.8075937621636435,"MemPct":0.17348194,"MemCumul":15.914059}]
