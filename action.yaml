@@ -2,5 +2,5 @@ description: Collects CPU and memory usage statistics during GHA jobs
 name: gha-stats
 runs:
   using: node16
-  main: dist/start.mjs
-  post: dist/post.mjs
+  main: dist/start.js
+  post: dist/post.js

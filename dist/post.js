@@ -21,14 +21,7 @@ var __spreadValues = (a, b) => {
   return a;
 };
 var __spreadProps = (a, b) => __defProps(a, __getOwnPropDescs(b));
-var __require = /* @__PURE__ */ ((x) => typeof require !== "undefined" ? require : typeof Proxy !== "undefined" ? new Proxy(x, {
-  get: (a, b) => (typeof require !== "undefined" ? require : a)[b]
-}) : x)(function(x) {
-  if (typeof require !== "undefined")
-    return require.apply(this, arguments);
-  throw new Error('Dynamic require of "' + x + '" is not supported');
-});
-var __commonJS = (cb, mod) => function __require2() {
+var __commonJS = (cb, mod) => function __require() {
   return mod || (0, cb[__getOwnPropNames(cb)[0]])((mod = { exports: {} }).exports, mod), mod.exports;
 };
 var __copyProps = (to, from, except, desc) => {
@@ -96,18 +89,18 @@ var require_command = __commonJS({
     var __importStar = exports && exports.__importStar || function(mod) {
       if (mod && mod.__esModule)
         return mod;
-      var result2 = {};
+      var result = {};
       if (mod != null) {
         for (var k in mod)
           if (k !== "default" && Object.hasOwnProperty.call(mod, k))
-            __createBinding(result2, mod, k);
+            __createBinding(result, mod, k);
       }
-      __setModuleDefault(result2, mod);
-      return result2;
+      __setModuleDefault(result, mod);
+      return result;
     };
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.issue = exports.issueCommand = void 0;
-    var os = __importStar(__require("os"));
+    var os = __importStar(require("os"));
     var utils_1 = require_utils();
     function issueCommand(command, properties, message) {
       const cmd = new Command(command, properties, message);
@@ -183,19 +176,19 @@ var require_file_command = __commonJS({
     var __importStar = exports && exports.__importStar || function(mod) {
       if (mod && mod.__esModule)
         return mod;
-      var result2 = {};
+      var result = {};
       if (mod != null) {
         for (var k in mod)
           if (k !== "default" && Object.hasOwnProperty.call(mod, k))
-            __createBinding(result2, mod, k);
+            __createBinding(result, mod, k);
       }
-      __setModuleDefault(result2, mod);
-      return result2;
+      __setModuleDefault(result, mod);
+      return result;
     };
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.issueCommand = void 0;
-    var fs = __importStar(__require("fs"));
-    var os = __importStar(__require("os"));
+    var fs = __importStar(require("fs"));
+    var os = __importStar(require("os"));
     var utils_1 = require_utils();
     function issueCommand(command, message) {
       const filePath = process.env[`GITHUB_${command}`];
@@ -271,13 +264,13 @@ var require_proxy = __commonJS({
 var require_tunnel = __commonJS({
   "node_modules/tunnel/lib/tunnel.js"(exports) {
     "use strict";
-    var net = __require("net");
-    var tls = __require("tls");
-    var http = __require("http");
-    var https = __require("https");
-    var events = __require("events");
-    var assert = __require("assert");
-    var util = __require("util");
+    var net = require("net");
+    var tls = require("tls");
+    var http = require("http");
+    var https = require("https");
+    var events = require("events");
+    var assert = require("assert");
+    var util = require("util");
     exports.httpOverHttp = httpOverHttp;
     exports.httpsOverHttp = httpsOverHttp;
     exports.httpOverHttps = httpOverHttps;
@@ -492,8 +485,8 @@ var require_tunnel = __commonJS({
 
 // node_modules/tunnel/index.js
 var require_tunnel2 = __commonJS({
-  "node_modules/tunnel/index.js"(exports, module) {
-    module.exports = require_tunnel();
+  "node_modules/tunnel/index.js"(exports, module2) {
+    module2.exports = require_tunnel();
   }
 });
 
@@ -502,8 +495,8 @@ var require_http_client = __commonJS({
   "node_modules/@actions/http-client/index.js"(exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
-    var http = __require("http");
-    var https = __require("https");
+    var http = require("http");
+    var https = require("https");
     var pm = require_proxy();
     var tunnel;
     var HttpCodes;
@@ -1039,8 +1032,8 @@ var require_oidc_utils = __commonJS({
             reject(e);
           }
         }
-        function step(result2) {
-          result2.done ? resolve(result2.value) : adopt(result2.value).then(fulfilled, rejected);
+        function step(result) {
+          result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected);
         }
         step((generator = generator.apply(thisArg, _arguments || [])).next());
       });
@@ -1135,14 +1128,14 @@ var require_core = __commonJS({
     var __importStar = exports && exports.__importStar || function(mod) {
       if (mod && mod.__esModule)
         return mod;
-      var result2 = {};
+      var result = {};
       if (mod != null) {
         for (var k in mod)
           if (k !== "default" && Object.hasOwnProperty.call(mod, k))
-            __createBinding(result2, mod, k);
+            __createBinding(result, mod, k);
       }
-      __setModuleDefault(result2, mod);
-      return result2;
+      __setModuleDefault(result, mod);
+      return result;
     };
     var __awaiter = exports && exports.__awaiter || function(thisArg, _arguments, P, generator) {
       function adopt(value) {
@@ -1165,8 +1158,8 @@ var require_core = __commonJS({
             reject(e);
           }
         }
-        function step(result2) {
-          result2.done ? resolve(result2.value) : adopt(result2.value).then(fulfilled, rejected);
+        function step(result) {
+          result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected);
         }
         step((generator = generator.apply(thisArg, _arguments || [])).next());
       });
@@ -1176,8 +1169,8 @@ var require_core = __commonJS({
     var command_1 = require_command();
     var file_command_1 = require_file_command();
     var utils_1 = require_utils();
-    var os = __importStar(__require("os"));
-    var path = __importStar(__require("path"));
+    var os = __importStar(require("os"));
+    var path = __importStar(require("path"));
     var oidc_utils_1 = require_oidc_utils();
     var ExitCode;
     (function(ExitCode2) {
@@ -1288,13 +1281,13 @@ Support boolean input list: \`true | True | TRUE | false | False | FALSE\``);
     function group(name, fn) {
       return __awaiter(this, void 0, void 0, function* () {
         startGroup(name);
-        let result2;
+        let result;
         try {
-          result2 = yield fn();
+          result = yield fn();
         } finally {
           endGroup();
         }
-        return result2;
+        return result;
       });
     }
     exports.group = group;
@@ -1396,20 +1389,20 @@ var require_upload_specification = __commonJS({
     var __importStar = exports && exports.__importStar || function(mod) {
       if (mod && mod.__esModule)
         return mod;
-      var result2 = {};
+      var result = {};
       if (mod != null) {
         for (var k in mod)
           if (k !== "default" && Object.hasOwnProperty.call(mod, k))
-            __createBinding(result2, mod, k);
+            __createBinding(result, mod, k);
       }
-      __setModuleDefault(result2, mod);
-      return result2;
+      __setModuleDefault(result, mod);
+      return result;
     };
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.getUploadSpecification = void 0;
-    var fs = __importStar(__require("fs"));
+    var fs = __importStar(require("fs"));
     var core_1 = require_core();
-    var path_1 = __require("path");
+    var path_1 = require("path");
     var path_and_artifact_name_validation_1 = require_path_and_artifact_name_validation();
     function getUploadSpecification(artifactName, rootDirectory, artifactFiles) {
       const specifications = [];
@@ -1450,9 +1443,9 @@ var require_upload_specification = __commonJS({
 // node_modules/fs.realpath/old.js
 var require_old = __commonJS({
   "node_modules/fs.realpath/old.js"(exports) {
-    var pathModule = __require("path");
+    var pathModule = require("path");
     var isWindows = process.platform === "win32";
-    var fs = __require("fs");
+    var fs = require("fs");
     var DEBUG = process.env.NODE_DEBUG && /fs/.test(process.env.NODE_DEBUG);
     function rethrow() {
       var callback;
@@ -1523,10 +1516,10 @@ var require_old = __commonJS({
       }
       while (pos < p.length) {
         nextPartRe.lastIndex = pos;
-        var result2 = nextPartRe.exec(p);
+        var result = nextPartRe.exec(p);
         previous = current;
-        current += result2[0];
-        base = previous + result2[1];
+        current += result[0];
+        base = previous + result[1];
         pos = nextPartRe.lastIndex;
         if (knownHard[base] || cache && cache[base] === base) {
           continue;
@@ -1605,10 +1598,10 @@ var require_old = __commonJS({
           return cb(null, p);
         }
         nextPartRe.lastIndex = pos;
-        var result2 = nextPartRe.exec(p);
+        var result = nextPartRe.exec(p);
         previous = current;
-        current += result2[0];
-        base = previous + result2[1];
+        current += result[0];
+        base = previous + result[1];
         pos = nextPartRe.lastIndex;
         if (knownHard[base] || cache && cache[base] === base) {
           return process.nextTick(LOOP);
@@ -1661,14 +1654,14 @@ var require_old = __commonJS({
 
 // node_modules/fs.realpath/index.js
 var require_fs = __commonJS({
-  "node_modules/fs.realpath/index.js"(exports, module) {
-    module.exports = realpath;
+  "node_modules/fs.realpath/index.js"(exports, module2) {
+    module2.exports = realpath;
     realpath.realpath = realpath;
     realpath.sync = realpathSync;
     realpath.realpathSync = realpathSync;
     realpath.monkeypatch = monkeypatch;
     realpath.unmonkeypatch = unmonkeypatch;
-    var fs = __require("fs");
+    var fs = require("fs");
     var origRealpath = fs.realpath;
     var origRealpathSync = fs.realpathSync;
     var version = process.version;
@@ -1685,11 +1678,11 @@ var require_fs = __commonJS({
         cb = cache;
         cache = null;
       }
-      origRealpath(p, cache, function(er, result2) {
+      origRealpath(p, cache, function(er, result) {
         if (newError(er)) {
           old.realpath(p, cache, cb);
         } else {
-          cb(er, result2);
+          cb(er, result);
         }
       });
     }
@@ -1720,8 +1713,8 @@ var require_fs = __commonJS({
 
 // node_modules/concat-map/index.js
 var require_concat_map = __commonJS({
-  "node_modules/concat-map/index.js"(exports, module) {
-    module.exports = function(xs, fn) {
+  "node_modules/concat-map/index.js"(exports, module2) {
+    module2.exports = function(xs, fn) {
       var res = [];
       for (var i = 0; i < xs.length; i++) {
         var x = fn(xs[i], i);
@@ -1740,9 +1733,9 @@ var require_concat_map = __commonJS({
 
 // node_modules/balanced-match/index.js
 var require_balanced_match = __commonJS({
-  "node_modules/balanced-match/index.js"(exports, module) {
+  "node_modules/balanced-match/index.js"(exports, module2) {
     "use strict";
-    module.exports = balanced;
+    module2.exports = balanced;
     function balanced(a, b, str) {
       if (a instanceof RegExp)
         a = maybeMatch(a, str);
@@ -1763,7 +1756,7 @@ var require_balanced_match = __commonJS({
     }
     balanced.range = range;
     function range(a, b, str) {
-      var begs, beg, left, right, result2;
+      var begs, beg, left, right, result;
       var ai = str.indexOf(a);
       var bi = str.indexOf(b, ai + 1);
       var i = ai;
@@ -1773,12 +1766,12 @@ var require_balanced_match = __commonJS({
         }
         begs = [];
         left = str.length;
-        while (i >= 0 && !result2) {
+        while (i >= 0 && !result) {
           if (i == ai) {
             begs.push(i);
             ai = str.indexOf(a, i + 1);
           } else if (begs.length == 1) {
-            result2 = [begs.pop(), bi];
+            result = [begs.pop(), bi];
           } else {
             beg = begs.pop();
             if (beg < left) {
@@ -1790,20 +1783,20 @@ var require_balanced_match = __commonJS({
           i = ai < bi && ai >= 0 ? ai : bi;
         }
         if (begs.length) {
-          result2 = [left, right];
+          result = [left, right];
         }
       }
-      return result2;
+      return result;
     }
   }
 });
 
 // node_modules/brace-expansion/index.js
 var require_brace_expansion = __commonJS({
-  "node_modules/brace-expansion/index.js"(exports, module) {
+  "node_modules/brace-expansion/index.js"(exports, module2) {
     var concatMap = require_concat_map();
     var balanced = require_balanced_match();
-    module.exports = expandTop;
+    module2.exports = expandTop;
     var escSlash = "\0SLASH" + Math.random() + "\0";
     var escOpen = "\0OPEN" + Math.random() + "\0";
     var escClose = "\0CLOSE" + Math.random() + "\0";
@@ -1945,12 +1938,12 @@ var require_brace_expansion = __commonJS({
 
 // node_modules/minimatch/minimatch.js
 var require_minimatch = __commonJS({
-  "node_modules/minimatch/minimatch.js"(exports, module) {
-    module.exports = minimatch;
+  "node_modules/minimatch/minimatch.js"(exports, module2) {
+    module2.exports = minimatch;
     minimatch.Minimatch = Minimatch;
     var path = function() {
       try {
-        return __require("path");
+        return require("path");
       } catch (e) {
       }
     }() || {
@@ -2532,9 +2525,9 @@ var require_minimatch = __commonJS({
 
 // node_modules/inherits/inherits_browser.js
 var require_inherits_browser = __commonJS({
-  "node_modules/inherits/inherits_browser.js"(exports, module) {
+  "node_modules/inherits/inherits_browser.js"(exports, module2) {
     if (typeof Object.create === "function") {
-      module.exports = function inherits(ctor, superCtor) {
+      module2.exports = function inherits(ctor, superCtor) {
         if (superCtor) {
           ctor.super_ = superCtor;
           ctor.prototype = Object.create(superCtor.prototype, {
@@ -2548,7 +2541,7 @@ var require_inherits_browser = __commonJS({
         }
       };
     } else {
-      module.exports = function inherits(ctor, superCtor) {
+      module2.exports = function inherits(ctor, superCtor) {
         if (superCtor) {
           ctor.super_ = superCtor;
           var TempCtor = function() {
@@ -2564,14 +2557,14 @@ var require_inherits_browser = __commonJS({
 
 // node_modules/inherits/inherits.js
 var require_inherits = __commonJS({
-  "node_modules/inherits/inherits.js"(exports, module) {
+  "node_modules/inherits/inherits.js"(exports, module2) {
     try {
-      util = __require("util");
+      util = require("util");
       if (typeof util.inherits !== "function")
         throw "";
-      module.exports = util.inherits;
+      module2.exports = util.inherits;
     } catch (e) {
-      module.exports = require_inherits_browser();
+      module2.exports = require_inherits_browser();
     }
     var util;
   }
@@ -2579,21 +2572,21 @@ var require_inherits = __commonJS({
 
 // node_modules/path-is-absolute/index.js
 var require_path_is_absolute = __commonJS({
-  "node_modules/path-is-absolute/index.js"(exports, module) {
+  "node_modules/path-is-absolute/index.js"(exports, module2) {
     "use strict";
     function posix(path) {
       return path.charAt(0) === "/";
     }
     function win32(path) {
       var splitDeviceRe = /^([a-zA-Z]:|[\\\/]{2}[^\\\/]+[\\\/]+[^\\\/]+)?([\\\/])?([\s\S]*?)$/;
-      var result2 = splitDeviceRe.exec(path);
-      var device = result2[1] || "";
+      var result = splitDeviceRe.exec(path);
+      var device = result[1] || "";
       var isUnc = Boolean(device && device.charAt(1) !== ":");
-      return Boolean(result2[2] || isUnc);
+      return Boolean(result[2] || isUnc);
     }
-    module.exports = process.platform === "win32" ? win32 : posix;
-    module.exports.posix = posix;
-    module.exports.win32 = win32;
+    module2.exports = process.platform === "win32" ? win32 : posix;
+    module2.exports.posix = posix;
+    module2.exports.win32 = win32;
   }
 });
 
@@ -2610,8 +2603,8 @@ var require_common = __commonJS({
     function ownProp(obj, field) {
       return Object.prototype.hasOwnProperty.call(obj, field);
     }
-    var fs = __require("fs");
-    var path = __require("path");
+    var fs = require("fs");
+    var path = require("path");
     var minimatch = require_minimatch();
     var isAbsolute = require_path_is_absolute();
     var Minimatch = minimatch.Minimatch;
@@ -2792,16 +2785,16 @@ var require_common = __commonJS({
 
 // node_modules/glob/sync.js
 var require_sync = __commonJS({
-  "node_modules/glob/sync.js"(exports, module) {
-    module.exports = globSync;
+  "node_modules/glob/sync.js"(exports, module2) {
+    module2.exports = globSync;
     globSync.GlobSync = GlobSync;
     var rp = require_fs();
     var minimatch = require_minimatch();
     var Minimatch = minimatch.Minimatch;
     var Glob = require_glob().Glob;
-    var util = __require("util");
-    var path = __require("path");
-    var assert = __require("assert");
+    var util = require("util");
+    var path = require("path");
+    var assert = require("assert");
     var isAbsolute = require_path_is_absolute();
     var common = require_common();
     var setopts = common.setopts;
@@ -3142,8 +3135,8 @@ var require_sync = __commonJS({
 
 // node_modules/wrappy/wrappy.js
 var require_wrappy = __commonJS({
-  "node_modules/wrappy/wrappy.js"(exports, module) {
-    module.exports = wrappy;
+  "node_modules/wrappy/wrappy.js"(exports, module2) {
+    module2.exports = wrappy;
     function wrappy(fn, cb) {
       if (fn && cb)
         return wrappy(fn)(cb);
@@ -3173,10 +3166,10 @@ var require_wrappy = __commonJS({
 
 // node_modules/once/once.js
 var require_once = __commonJS({
-  "node_modules/once/once.js"(exports, module) {
+  "node_modules/once/once.js"(exports, module2) {
     var wrappy = require_wrappy();
-    module.exports = wrappy(once);
-    module.exports.strict = wrappy(onceStrict);
+    module2.exports = wrappy(once);
+    module2.exports.strict = wrappy(onceStrict);
     once.proto = once(function() {
       Object.defineProperty(Function.prototype, "once", {
         value: function() {
@@ -3218,11 +3211,11 @@ var require_once = __commonJS({
 
 // node_modules/inflight/inflight.js
 var require_inflight = __commonJS({
-  "node_modules/inflight/inflight.js"(exports, module) {
+  "node_modules/inflight/inflight.js"(exports, module2) {
     var wrappy = require_wrappy();
     var reqs = /* @__PURE__ */ Object.create(null);
     var once = require_once();
-    module.exports = wrappy(inflight);
+    module2.exports = wrappy(inflight);
     function inflight(key, cb) {
       if (reqs[key]) {
         reqs[key].push(cb);
@@ -3265,22 +3258,22 @@ var require_inflight = __commonJS({
 
 // node_modules/glob/glob.js
 var require_glob = __commonJS({
-  "node_modules/glob/glob.js"(exports, module) {
-    module.exports = glob;
+  "node_modules/glob/glob.js"(exports, module2) {
+    module2.exports = glob;
     var rp = require_fs();
     var minimatch = require_minimatch();
     var Minimatch = minimatch.Minimatch;
     var inherits = require_inherits();
-    var EE = __require("events").EventEmitter;
-    var path = __require("path");
-    var assert = __require("assert");
+    var EE = require("events").EventEmitter;
+    var path = require("path");
+    var assert = require("assert");
     var isAbsolute = require_path_is_absolute();
     var globSync = require_sync();
     var common = require_common();
     var setopts = common.setopts;
     var ownProp = common.ownProp;
     var inflight = require_inflight();
-    var util = __require("util");
+    var util = require("util");
     var childrenIgnored = common.childrenIgnored;
     var isIgnored = common.isIgnored;
     var once = require_once();
@@ -3818,10 +3811,10 @@ var require_glob = __commonJS({
 
 // node_modules/rimraf/rimraf.js
 var require_rimraf = __commonJS({
-  "node_modules/rimraf/rimraf.js"(exports, module) {
-    var assert = __require("assert");
-    var path = __require("path");
-    var fs = __require("fs");
+  "node_modules/rimraf/rimraf.js"(exports, module2) {
+    var assert = require("assert");
+    var path = require("path");
+    var fs = require("fs");
     var glob = void 0;
     try {
       glob = require_glob();
@@ -4092,18 +4085,18 @@ var require_rimraf = __commonJS({
         }
       } while (true);
     };
-    module.exports = rimraf;
+    module2.exports = rimraf;
     rimraf.sync = rimrafSync;
   }
 });
 
 // node_modules/tmp/lib/tmp.js
 var require_tmp = __commonJS({
-  "node_modules/tmp/lib/tmp.js"(exports, module) {
-    var fs = __require("fs");
-    var os = __require("os");
-    var path = __require("path");
-    var crypto = __require("crypto");
+  "node_modules/tmp/lib/tmp.js"(exports, module2) {
+    var fs = require("fs");
+    var os = require("os");
+    var path = require("path");
+    var crypto = require("crypto");
     var _c = { fs: fs.constants, os: os.constants };
     var rimraf = require_rimraf();
     var RANDOM_CHARS = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
@@ -4410,55 +4403,55 @@ var require_tmp = __commonJS({
       return path.resolve(_sanitizeName(options && options.tmpdir || os.tmpdir()));
     }
     process.addListener(EXIT, _garbageCollector);
-    Object.defineProperty(module.exports, "tmpdir", {
+    Object.defineProperty(module2.exports, "tmpdir", {
       enumerable: true,
       configurable: false,
       get: function() {
         return _getTmpDir();
       }
     });
-    module.exports.dir = dir;
-    module.exports.dirSync = dirSync;
-    module.exports.file = file;
-    module.exports.fileSync = fileSync;
-    module.exports.tmpName = tmpName;
-    module.exports.tmpNameSync = tmpNameSync;
-    module.exports.setGracefulCleanup = setGracefulCleanup;
+    module2.exports.dir = dir;
+    module2.exports.dirSync = dirSync;
+    module2.exports.file = file;
+    module2.exports.fileSync = fileSync;
+    module2.exports.tmpName = tmpName;
+    module2.exports.tmpNameSync = tmpNameSync;
+    module2.exports.setGracefulCleanup = setGracefulCleanup;
   }
 });
 
 // node_modules/tmp-promise/index.js
 var require_tmp_promise = __commonJS({
-  "node_modules/tmp-promise/index.js"(exports, module) {
+  "node_modules/tmp-promise/index.js"(exports, module2) {
     "use strict";
-    var { promisify } = __require("util");
+    var { promisify } = require("util");
     var tmp = require_tmp();
-    module.exports.fileSync = tmp.fileSync;
+    module2.exports.fileSync = tmp.fileSync;
     var fileWithOptions = promisify((options, cb) => tmp.file(options, (err, path, fd, cleanup) => err ? cb(err) : cb(void 0, { path, fd, cleanup: promisify(cleanup) })));
-    module.exports.file = async (options) => fileWithOptions(options);
-    module.exports.withFile = async function withFile(fn, options) {
-      const { path, fd, cleanup } = await module.exports.file(options);
+    module2.exports.file = async (options) => fileWithOptions(options);
+    module2.exports.withFile = async function withFile(fn, options) {
+      const { path, fd, cleanup } = await module2.exports.file(options);
       try {
         return await fn({ path, fd });
       } finally {
         await cleanup();
       }
     };
-    module.exports.dirSync = tmp.dirSync;
+    module2.exports.dirSync = tmp.dirSync;
     var dirWithOptions = promisify((options, cb) => tmp.dir(options, (err, path, cleanup) => err ? cb(err) : cb(void 0, { path, cleanup: promisify(cleanup) })));
-    module.exports.dir = async (options) => dirWithOptions(options);
-    module.exports.withDir = async function withDir(fn, options) {
-      const { path, cleanup } = await module.exports.dir(options);
+    module2.exports.dir = async (options) => dirWithOptions(options);
+    module2.exports.withDir = async function withDir(fn, options) {
+      const { path, cleanup } = await module2.exports.dir(options);
       try {
         return await fn({ path });
       } finally {
         await cleanup();
       }
     };
-    module.exports.tmpNameSync = tmp.tmpNameSync;
-    module.exports.tmpName = promisify(tmp.tmpName);
-    module.exports.tmpdir = tmp.tmpdir;
-    module.exports.setGracefulCleanup = tmp.setGracefulCleanup;
+    module2.exports.tmpNameSync = tmp.tmpNameSync;
+    module2.exports.tmpName = promisify(tmp.tmpName);
+    module2.exports.tmpdir = tmp.tmpdir;
+    module2.exports.setGracefulCleanup = tmp.setGracefulCleanup;
   }
 });
 
@@ -4556,8 +4549,8 @@ var require_utils2 = __commonJS({
             reject(e);
           }
         }
-        function step(result2) {
-          result2.done ? resolve(result2.value) : adopt(result2.value).then(fulfilled, rejected);
+        function step(result) {
+          result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected);
         }
         step((generator = generator.apply(thisArg, _arguments || [])).next());
       });
@@ -4565,7 +4558,7 @@ var require_utils2 = __commonJS({
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.sleep = exports.getProperRetention = exports.rmFile = exports.getFileSize = exports.createEmptyFilesForArtifact = exports.createDirectoriesForArtifact = exports.displayHttpDiagnostics = exports.getArtifactUrl = exports.createHttpClient = exports.getUploadHeaders = exports.getDownloadHeaders = exports.getContentRange = exports.tryGetRetryAfterValueTimeInMilliseconds = exports.isThrottledStatusCode = exports.isRetryableStatusCode = exports.isForbiddenStatusCode = exports.isSuccessStatusCode = exports.getApiVersion = exports.parseEnvNumber = exports.getExponentialRetryTimeInMilliseconds = void 0;
     var core_1 = require_core();
-    var fs_1 = __require("fs");
+    var fs_1 = require("fs");
     var http_client_1 = require_http_client();
     var auth_1 = require_auth();
     var config_variables_1 = require_config_variables();
@@ -4864,14 +4857,14 @@ var require_upload_gzip = __commonJS({
     var __importStar = exports && exports.__importStar || function(mod) {
       if (mod && mod.__esModule)
         return mod;
-      var result2 = {};
+      var result = {};
       if (mod != null) {
         for (var k in mod)
           if (k !== "default" && Object.hasOwnProperty.call(mod, k))
-            __createBinding(result2, mod, k);
+            __createBinding(result, mod, k);
       }
-      __setModuleDefault(result2, mod);
-      return result2;
+      __setModuleDefault(result, mod);
+      return result;
     };
     var __awaiter = exports && exports.__awaiter || function(thisArg, _arguments, P, generator) {
       function adopt(value) {
@@ -4894,8 +4887,8 @@ var require_upload_gzip = __commonJS({
             reject(e);
           }
         }
-        function step(result2) {
-          result2.done ? resolve(result2.value) : adopt(result2.value).then(fulfilled, rejected);
+        function step(result) {
+          result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected);
         }
         step((generator = generator.apply(thisArg, _arguments || [])).next());
       });
@@ -4922,9 +4915,9 @@ var require_upload_gzip = __commonJS({
     };
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.createGZipFileInBuffer = exports.createGZipFileOnDisk = void 0;
-    var fs = __importStar(__require("fs"));
-    var zlib = __importStar(__require("zlib"));
-    var util_1 = __require("util");
+    var fs = __importStar(require("fs"));
+    var zlib = __importStar(require("zlib"));
+    var util_1 = require("util");
     var stat = util_1.promisify(fs.stat);
     var gzipExemptFileExtensions = [
       ".gzip",
@@ -5013,14 +5006,14 @@ var require_requestUtils = __commonJS({
     var __importStar = exports && exports.__importStar || function(mod) {
       if (mod && mod.__esModule)
         return mod;
-      var result2 = {};
+      var result = {};
       if (mod != null) {
         for (var k in mod)
           if (k !== "default" && Object.hasOwnProperty.call(mod, k))
-            __createBinding(result2, mod, k);
+            __createBinding(result, mod, k);
       }
-      __setModuleDefault(result2, mod);
-      return result2;
+      __setModuleDefault(result, mod);
+      return result;
     };
     var __awaiter = exports && exports.__awaiter || function(thisArg, _arguments, P, generator) {
       function adopt(value) {
@@ -5043,8 +5036,8 @@ var require_requestUtils = __commonJS({
             reject(e);
           }
         }
-        function step(result2) {
-          result2.done ? resolve(result2.value) : adopt(result2.value).then(fulfilled, rejected);
+        function step(result) {
+          result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected);
         }
         step((generator = generator.apply(thisArg, _arguments || [])).next());
       });
@@ -5131,14 +5124,14 @@ var require_upload_http_client = __commonJS({
     var __importStar = exports && exports.__importStar || function(mod) {
       if (mod && mod.__esModule)
         return mod;
-      var result2 = {};
+      var result = {};
       if (mod != null) {
         for (var k in mod)
           if (k !== "default" && Object.hasOwnProperty.call(mod, k))
-            __createBinding(result2, mod, k);
+            __createBinding(result, mod, k);
       }
-      __setModuleDefault(result2, mod);
-      return result2;
+      __setModuleDefault(result, mod);
+      return result;
     };
     var __awaiter = exports && exports.__awaiter || function(thisArg, _arguments, P, generator) {
       function adopt(value) {
@@ -5161,23 +5154,23 @@ var require_upload_http_client = __commonJS({
             reject(e);
           }
         }
-        function step(result2) {
-          result2.done ? resolve(result2.value) : adopt(result2.value).then(fulfilled, rejected);
+        function step(result) {
+          result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected);
         }
         step((generator = generator.apply(thisArg, _arguments || [])).next());
       });
     };
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.UploadHttpClient = void 0;
-    var fs = __importStar(__require("fs"));
+    var fs = __importStar(require("fs"));
     var core = __importStar(require_core());
     var tmp = __importStar(require_tmp_promise());
-    var stream = __importStar(__require("stream"));
+    var stream = __importStar(require("stream"));
     var utils_1 = require_utils2();
     var config_variables_1 = require_config_variables();
-    var util_1 = __require("util");
-    var url_1 = __require("url");
-    var perf_hooks_1 = __require("perf_hooks");
+    var util_1 = require("util");
+    var url_1 = require("url");
+    var perf_hooks_1 = require("perf_hooks");
     var status_reporter_1 = require_status_reporter();
     var http_client_1 = require_http_client();
     var http_manager_1 = require_http_manager();
@@ -5201,7 +5194,7 @@ var require_upload_http_client = __commonJS({
           }
           const data = JSON.stringify(parameters, null, 2);
           const artifactUrl = utils_1.getArtifactUrl();
-          const client2 = this.uploadHttpManager.getClient(0);
+          const client = this.uploadHttpManager.getClient(0);
           const headers = utils_1.getUploadHeaders("application/json", false);
           const customErrorMessages = /* @__PURE__ */ new Map([
             [
@@ -5214,7 +5207,7 @@ var require_upload_http_client = __commonJS({
             ]
           ]);
           const response = yield requestUtils_1.retryHttpClientRequest("Create Artifact Container", () => __awaiter(this, void 0, void 0, function* () {
-            return client2.post(artifactUrl, data, headers);
+            return client.post(artifactUrl, data, headers);
           }), customErrorMessages);
           const body = yield response.readBody();
           return JSON.parse(body);
@@ -5314,8 +5307,8 @@ var require_upload_http_client = __commonJS({
               };
               uploadFileSize = buffer.byteLength;
             }
-            const result2 = yield this.uploadChunk(httpClientIndex, parameters.resourceUrl, openUploadStream, 0, uploadFileSize - 1, uploadFileSize, isGzip, totalFileSize);
-            if (!result2) {
+            const result = yield this.uploadChunk(httpClientIndex, parameters.resourceUrl, openUploadStream, 0, uploadFileSize - 1, uploadFileSize, isGzip, totalFileSize);
+            if (!result) {
               isUploadSuccessful = false;
               failedChunkSizes += uploadFileSize;
               core.warning(`Aborting upload for ${parameters.file} due to failure`);
@@ -5348,12 +5341,12 @@ var require_upload_http_client = __commonJS({
                 failedChunkSizes += chunkSize;
                 continue;
               }
-              const result2 = yield this.uploadChunk(httpClientIndex, parameters.resourceUrl, () => fs.createReadStream(uploadFilePath, {
+              const result = yield this.uploadChunk(httpClientIndex, parameters.resourceUrl, () => fs.createReadStream(uploadFilePath, {
                 start: startChunkIndex,
                 end: endChunkIndex,
                 autoClose: false
               }), startChunkIndex, endChunkIndex, uploadFileSize, isGzip, totalFileSize);
-              if (!result2) {
+              if (!result) {
                 isUploadSuccessful = false;
                 failedChunkSizes += chunkSize;
                 core.warning(`Aborting upload for ${parameters.file} due to failure`);
@@ -5378,8 +5371,8 @@ var require_upload_http_client = __commonJS({
         return __awaiter(this, void 0, void 0, function* () {
           const headers = utils_1.getUploadHeaders("application/octet-stream", true, isGzip, totalFileSize, end - start + 1, utils_1.getContentRange(start, end, uploadFileSize));
           const uploadChunkRequest = () => __awaiter(this, void 0, void 0, function* () {
-            const client2 = this.uploadHttpManager.getClient(httpClientIndex);
-            return yield client2.sendStream("PUT", resourceUrl, openStream(), headers);
+            const client = this.uploadHttpManager.getClient(httpClientIndex);
+            return yield client.sendStream("PUT", resourceUrl, openStream(), headers);
           });
           let retryCount = 0;
           const retryLimit = config_variables_1.getRetryLimit();
@@ -5445,7 +5438,7 @@ var require_upload_http_client = __commonJS({
           const parameters = { Size: size };
           const data = JSON.stringify(parameters, null, 2);
           core.debug(`URL is ${resourceUrl.toString()}`);
-          const client2 = this.uploadHttpManager.getClient(0);
+          const client = this.uploadHttpManager.getClient(0);
           const headers = utils_1.getUploadHeaders("application/json", false);
           const customErrorMessages = /* @__PURE__ */ new Map([
             [
@@ -5454,7 +5447,7 @@ var require_upload_http_client = __commonJS({
             ]
           ]);
           const response = yield requestUtils_1.retryHttpClientRequest("Finalize artifact upload", () => __awaiter(this, void 0, void 0, function* () {
-            return client2.patch(resourceUrl.toString(), data, headers);
+            return client.patch(resourceUrl.toString(), data, headers);
           }), customErrorMessages);
           yield response.readBody();
           core.debug(`Artifact ${artifactName} has been successfully uploaded, total size in bytes: ${size}`);
@@ -5488,14 +5481,14 @@ var require_download_http_client = __commonJS({
     var __importStar = exports && exports.__importStar || function(mod) {
       if (mod && mod.__esModule)
         return mod;
-      var result2 = {};
+      var result = {};
       if (mod != null) {
         for (var k in mod)
           if (k !== "default" && Object.hasOwnProperty.call(mod, k))
-            __createBinding(result2, mod, k);
+            __createBinding(result, mod, k);
       }
-      __setModuleDefault(result2, mod);
-      return result2;
+      __setModuleDefault(result, mod);
+      return result;
     };
     var __awaiter = exports && exports.__awaiter || function(thisArg, _arguments, P, generator) {
       function adopt(value) {
@@ -5518,21 +5511,21 @@ var require_download_http_client = __commonJS({
             reject(e);
           }
         }
-        function step(result2) {
-          result2.done ? resolve(result2.value) : adopt(result2.value).then(fulfilled, rejected);
+        function step(result) {
+          result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected);
         }
         step((generator = generator.apply(thisArg, _arguments || [])).next());
       });
     };
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.DownloadHttpClient = void 0;
-    var fs = __importStar(__require("fs"));
+    var fs = __importStar(require("fs"));
     var core = __importStar(require_core());
-    var zlib = __importStar(__require("zlib"));
+    var zlib = __importStar(require("zlib"));
     var utils_1 = require_utils2();
-    var url_1 = __require("url");
+    var url_1 = require("url");
     var status_reporter_1 = require_status_reporter();
-    var perf_hooks_1 = __require("perf_hooks");
+    var perf_hooks_1 = require("perf_hooks");
     var http_manager_1 = require_http_manager();
     var config_variables_1 = require_config_variables();
     var requestUtils_1 = require_requestUtils();
@@ -5544,10 +5537,10 @@ var require_download_http_client = __commonJS({
       listArtifacts() {
         return __awaiter(this, void 0, void 0, function* () {
           const artifactUrl = utils_1.getArtifactUrl();
-          const client2 = this.downloadHttpManager.getClient(0);
+          const client = this.downloadHttpManager.getClient(0);
           const headers = utils_1.getDownloadHeaders("application/json");
           const response = yield requestUtils_1.retryHttpClientRequest("List Artifacts", () => __awaiter(this, void 0, void 0, function* () {
-            return client2.get(artifactUrl, headers);
+            return client.get(artifactUrl, headers);
           }));
           const body = yield response.readBody();
           return JSON.parse(body);
@@ -5557,10 +5550,10 @@ var require_download_http_client = __commonJS({
         return __awaiter(this, void 0, void 0, function* () {
           const resourceUrl = new url_1.URL(containerUrl);
           resourceUrl.searchParams.append("itemPath", artifactName);
-          const client2 = this.downloadHttpManager.getClient(0);
+          const client = this.downloadHttpManager.getClient(0);
           const headers = utils_1.getDownloadHeaders("application/json");
           const response = yield requestUtils_1.retryHttpClientRequest("Get Container Items", () => __awaiter(this, void 0, void 0, function* () {
-            return client2.get(resourceUrl.toString(), headers);
+            return client.get(resourceUrl.toString(), headers);
           }));
           const body = yield response.readBody();
           return JSON.parse(body);
@@ -5602,8 +5595,8 @@ var require_download_http_client = __commonJS({
           let destinationStream = fs.createWriteStream(downloadPath);
           const headers = utils_1.getDownloadHeaders("application/json", true, true);
           const makeDownloadRequest = () => __awaiter(this, void 0, void 0, function* () {
-            const client2 = this.downloadHttpManager.getClient(httpClientIndex);
-            return yield client2.get(artifactLocation, headers);
+            const client = this.downloadHttpManager.getClient(httpClientIndex);
+            return yield client.get(artifactLocation, headers);
           });
           const isGzip = (incomingHeaders) => {
             return "content-encoding" in incomingHeaders && incomingHeaders["content-encoding"] === "gzip";
@@ -5736,18 +5729,18 @@ var require_download_specification = __commonJS({
     var __importStar = exports && exports.__importStar || function(mod) {
       if (mod && mod.__esModule)
         return mod;
-      var result2 = {};
+      var result = {};
       if (mod != null) {
         for (var k in mod)
           if (k !== "default" && Object.hasOwnProperty.call(mod, k))
-            __createBinding(result2, mod, k);
+            __createBinding(result, mod, k);
       }
-      __setModuleDefault(result2, mod);
-      return result2;
+      __setModuleDefault(result, mod);
+      return result;
     };
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.getDownloadSpecification = void 0;
-    var path = __importStar(__require("path"));
+    var path = __importStar(require("path"));
     function getDownloadSpecification(artifactName, artifactEntries, downloadPath, includeRootDirectory) {
       const directories = /* @__PURE__ */ new Set();
       const specifications = {
@@ -5803,14 +5796,14 @@ var require_artifact_client = __commonJS({
     var __importStar = exports && exports.__importStar || function(mod) {
       if (mod && mod.__esModule)
         return mod;
-      var result2 = {};
+      var result = {};
       if (mod != null) {
         for (var k in mod)
           if (k !== "default" && Object.hasOwnProperty.call(mod, k))
-            __createBinding(result2, mod, k);
+            __createBinding(result, mod, k);
       }
-      __setModuleDefault(result2, mod);
-      return result2;
+      __setModuleDefault(result, mod);
+      return result;
     };
     var __awaiter = exports && exports.__awaiter || function(thisArg, _arguments, P, generator) {
       function adopt(value) {
@@ -5833,8 +5826,8 @@ var require_artifact_client = __commonJS({
             reject(e);
           }
         }
-        function step(result2) {
-          result2.done ? resolve(result2.value) : adopt(result2.value).then(fulfilled, rejected);
+        function step(result) {
+          result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected);
         }
         step((generator = generator.apply(thisArg, _arguments || [])).next());
       });
@@ -5849,7 +5842,7 @@ var require_artifact_client = __commonJS({
     var download_http_client_1 = require_download_http_client();
     var download_specification_1 = require_download_specification();
     var config_variables_1 = require_config_variables();
-    var path_1 = __require("path");
+    var path_1 = require("path");
     var DefaultArtifactClient = class {
       static create() {
         return new DefaultArtifactClient();
@@ -5988,14 +5981,16 @@ var require_artifact_client2 = __commonJS({
 });
 
 // js/post.js
+var import_child_process = require("child_process");
 var import_artifact = __toESM(require_artifact_client2(), 1);
-import { execSync } from "child_process";
-console.log("post 1");
-execSync(`ls -lh /tmp 1>&2`);
-execSync(`gha-stats stop 1>&2`);
-var client = import_artifact.default.create();
-var result = await client.uploadArtifact("gha-stats", ["/tmp/gha.log"], "/tmp");
-console.log("post 2");
+(async () => {
+  console.log("post 1");
+  (0, import_child_process.execSync)(`ls -lh /tmp 1>&2`);
+  (0, import_child_process.execSync)(`gha-stats stop 1>&2`);
+  const client = import_artifact.default.create();
+  const result = await client.uploadArtifact("gha-stats", ["/tmp/gha.log"], "/tmp");
+  console.log("post 2");
+})();
 /*!
  * Tmp
  *
