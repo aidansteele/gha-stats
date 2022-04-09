@@ -1,0 +1,26 @@
+{
+  "name": "gha-stats",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/aidansteele/gha-stats.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/aidansteele/gha-stats/issues"
+  },
+  "homepage": "https://github.com/aidansteele/gha-stats#readme",
+  "devDependencies": {
+    "esbuild": "^0.14.34"
+  },
+  "dependencies": {
+    "@actions/artifact": "^1.0.0"
+  }
+}

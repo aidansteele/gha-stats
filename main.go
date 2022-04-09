@@ -14,11 +14,15 @@ import (
 	"time"
 )
 
+type processIdentity struct {
+	Pid  int32
+	Ppid int32
+	Name string
+	Exe  string
+}
+
 type snapshot struct {
-	Pid      int32
-	Ppid     int32
-	Name     string
-	Exe      string
+	processIdentity
 	CpuPct   float64
 	Mem      uint64
 	MemPct   float32
@@ -143,10 +147,12 @@ func getSnapshot(ctx context.Context) ([]snapshot, error) {
 		rss := memInfo.RSS
 
 		slice[idx] = snapshot{
-			Pid:    pid,
-			Ppid:   ppid,
-			Name:   name,
-			Exe:    exe,
+			processIdentity: processIdentity{
+				Pid:  pid,
+				Ppid: ppid,
+				Name: name,
+				Exe:  exe,
+			},
 			CpuPct: cpu,
 			Mem:    rss,
 			MemPct: mem,
