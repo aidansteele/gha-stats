@@ -20,6 +20,7 @@ type snapshot struct {
 	Name     string
 	Exe      string
 	CpuPct   float64
+	Mem      uint64
 	MemPct   float32
 	MemCumul float32
 }
@@ -138,6 +139,8 @@ func getSnapshot(ctx context.Context) ([]snapshot, error) {
 		cpu, _ := proc.CPUPercent()
 		mem, _ := proc.MemoryPercent()
 		exe, _ := proc.Exe()
+		memInfo, _ := proc.MemoryInfo()
+		rss := memInfo.RSS
 
 		slice[idx] = snapshot{
 			Pid:    pid,
@@ -145,6 +148,7 @@ func getSnapshot(ctx context.Context) ([]snapshot, error) {
 			Name:   name,
 			Exe:    exe,
 			CpuPct: cpu,
+			Mem:    rss,
 			MemPct: mem,
 		}
 
