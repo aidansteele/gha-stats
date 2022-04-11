@@ -1,11 +1,8 @@
-var __create = Object.create;
 var __defProp = Object.defineProperty;
 var __defProps = Object.defineProperties;
-var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
 var __getOwnPropDescs = Object.getOwnPropertyDescriptors;
 var __getOwnPropNames = Object.getOwnPropertyNames;
 var __getOwnPropSymbols = Object.getOwnPropertySymbols;
-var __getProtoOf = Object.getPrototypeOf;
 var __hasOwnProp = Object.prototype.hasOwnProperty;
 var __propIsEnum = Object.prototype.propertyIsEnumerable;
 var __defNormalProp = (obj, key, value) => key in obj ? __defProp(obj, key, { enumerable: true, configurable: true, writable: true, value }) : obj[key] = value;
@@ -24,15 +21,6 @@ var __spreadProps = (a, b) => __defProps(a, __getOwnPropDescs(b));
 var __commonJS = (cb, mod) => function __require() {
   return mod || (0, cb[__getOwnPropNames(cb)[0]])((mod = { exports: {} }).exports, mod), mod.exports;
 };
-var __copyProps = (to, from, except, desc) => {
-  if (from && typeof from === "object" || typeof from === "function") {
-    for (let key of __getOwnPropNames(from))
-      if (!__hasOwnProp.call(to, key) && key !== except)
-        __defProp(to, key, { get: () => from[key], enumerable: !(desc = __getOwnPropDesc(from, key)) || desc.enumerable });
-  }
-  return to;
-};
-var __toESM = (mod, isNodeMode, target) => (target = mod != null ? __create(__getProtoOf(mod)) : {}, __copyProps(isNodeMode || !mod || !mod.__esModule ? __defProp(target, "default", { value: mod, enumerable: true }) : target, mod));
 
 // node_modules/@actions/core/lib/utils.js
 var require_utils = __commonJS({
@@ -5981,11 +5969,11 @@ var require_artifact_client2 = __commonJS({
 });
 
 // js/post.js
-var import_child_process = require("child_process");
-var import_artifact = __toESM(require_artifact_client2());
+var { execSync } = require("child_process");
+var artifact = require_artifact_client2();
 (async () => {
-  (0, import_child_process.execSync)(`gha-stats stop 1>&2`);
-  const client = import_artifact.default.create();
+  execSync(`gha-stats stop 1>&2`);
+  const client = artifact.create();
   const result = await client.uploadArtifact("gha-stats", ["/tmp/gha.log"], "/tmp");
 })();
 /*!

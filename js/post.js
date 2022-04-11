@@ -1,5 +1,5 @@
-import { execSync } from 'child_process';
-import artifact from '@actions/artifact';
+const { execSync } = require('child_process');
+const artifact = require('@actions/artifact');
 
 (async () => {
   execSync(`gha-stats stop 1>&2`);
