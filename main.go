@@ -39,6 +39,7 @@ func start() (*daemon.Context, bool) {
 	dctx := &daemon.Context{
 		PidFileName: "/tmp/gha.pid",
 		LogFileName: "/tmp/gha.log",
+		WorkDir:     "./",
 	}
 
 	d, err := dctx.Reborn()
