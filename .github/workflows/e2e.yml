@@ -30,6 +30,8 @@ jobs:
 
       - run: env | sort
 
+      - run: cat ${{ github.step_summary }}
+
       - run: cat $GITHUB_EVENT_PATH | jq
 
       - run: go build
