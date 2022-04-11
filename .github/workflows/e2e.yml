@@ -16,4 +16,6 @@ jobs:
         with:
           go-version: 1.18
 
+      - run: env | sort
+
       - run: go build
