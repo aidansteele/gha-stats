@@ -14,17 +14,17 @@ import (
 )
 
 type snapshotTree struct {
-	snapshot
+	processSnapshot
 	children []*snapshotTree
 }
 
 type procMapEntry struct {
 	processIdentity
-	snapshots []*snapshot
+	snapshots []*processSnapshot
 }
 
 func TestTree(t *testing.T) {
-	arr := []snapshot{}
+	arr := []processSnapshot{}
 	err := json.Unmarshal([]byte(payload), &arr)
 	if err != nil {
 		t.Fatal(err)
@@ -33,8 +33,8 @@ func TestTree(t *testing.T) {
 	m := map[int32]*snapshotTree{}
 	for _, s := range arr {
 		m[s.Pid] = &snapshotTree{
-			snapshot: s,
-			children: []*snapshotTree{},
+			processSnapshot: s,
+			children:        []*snapshotTree{},
 		}
 	}
 
@@ -93,7 +93,7 @@ func TestChart(t *testing.T) {
 
 	lines := strings.Split(payload2, "\n")
 	for _, line := range lines {
-		moment := []snapshot{}
+		moment := []processSnapshot{}
 		err := json.Unmarshal([]byte(line), &moment)
 		if err != nil {
 			t.Fatal(err)
@@ -106,7 +106,7 @@ func TestChart(t *testing.T) {
 			} else {
 				procs[s.Pid] = &procMapEntry{
 					processIdentity: s.processIdentity,
-					snapshots:       []*snapshot{&s},
+					snapshots:       []*processSnapshot{&s},
 				}
 			}
 		}

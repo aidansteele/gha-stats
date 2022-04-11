@@ -21,7 +21,7 @@ type processIdentity struct {
 	Exe  string
 }
 
-type snapshot struct {
+type processSnapshot struct {
 	processIdentity
 	CpuPct   float64
 	Mem      uint64
@@ -29,23 +29,16 @@ type snapshot struct {
 	MemCumul float32
 }
 
+type snapshot struct {
+	GithubRunId string
+	Time        time.Time
+	Processes   []processSnapshot
+}
+
 func start() (*daemon.Context, bool) {
 	dctx := &daemon.Context{
 		PidFileName: "/tmp/gha.pid",
-		//PidFilePerm: 0,
 		LogFileName: "/tmp/gha.log",
-		//LogFilePerm: 0,
-		WorkDir: "./",
-		//Chroot:      "",
-		//Env:         nil,
-		//Args:        nil,
-		//Credential: &syscall.Credential{
-		//	Uid:         0,
-		//	Gid:         0,
-		//	Groups:      nil,
-		//	NoSetGroups: false,
-		//},
-		//Umask: 0,
 	}
 
 	d, err := dctx.Reborn()
@@ -92,15 +85,6 @@ func stop() {
 	if err != nil {
 		panic(err)
 	}
-
-	log, err := ioutil.ReadFile("/tmp/gha.log")
-	if err != nil {
-		panic(err)
-	}
-
-	fmt.Println(string(log))
-
-	fmt.Println("i logged ^")
 }
 
 func main() {
@@ -126,14 +110,14 @@ func main() {
 	}
 }
 
-func getSnapshot(ctx context.Context) ([]snapshot, error) {
+func getSnapshot(ctx context.Context) (*snapshot, error) {
 	procs, err := process.Processes()
 	if err != nil {
 		return nil, fmt.Errorf("getting processes: %w", err)
 	}
 
-	slice := make([]snapshot, len(procs))
-	byPid := make(map[int32]*snapshot, len(procs))
+	processes := make([]processSnapshot, len(procs))
+	byPid := make(map[int32]*processSnapshot, len(procs))
 	topo := toposort.NewGraph[int32](len(procs))
 
 	for idx, proc := range procs {
@@ -146,7 +130,7 @@ func getSnapshot(ctx context.Context) ([]snapshot, error) {
 		memInfo, _ := proc.MemoryInfo()
 		rss := memInfo.RSS
 
-		slice[idx] = snapshot{
+		processes[idx] = processSnapshot{
 			processIdentity: processIdentity{
 				Pid:  pid,
 				Ppid: ppid,
@@ -158,7 +142,7 @@ func getSnapshot(ctx context.Context) ([]snapshot, error) {
 			MemPct: mem,
 		}
 
-		byPid[pid] = &slice[idx]
+		byPid[pid] = &processes[idx]
 		topo.AddNodes(pid)
 		topo.AddEdge(pid, ppid)
 	}
@@ -169,16 +153,13 @@ func getSnapshot(ctx context.Context) ([]snapshot, error) {
 	}
 
 	for _, pid := range sorted {
-
 		snap := byPid[pid]
 		if snap == nil {
-			fmt.Fprintf(os.Stderr, "didn't find pid %d\n", pid)
 			continue
 		}
 
 		parent := byPid[snap.Ppid]
 		if parent == nil {
-			fmt.Fprintf(os.Stderr, "didn't find ppid %d\n", snap.Ppid)
 			continue
 		}
 
@@ -186,9 +167,13 @@ func getSnapshot(ctx context.Context) ([]snapshot, error) {
 		parent.MemCumul += snap.MemCumul
 	}
 
-	sort.Slice(slice, func(i, j int) bool {
-		return slice[i].MemCumul < slice[j].MemCumul
+	sort.Slice(processes, func(i, j int) bool {
+		return processes[i].MemCumul < processes[j].MemCumul
 	})
 
-	return slice, nil
+	return &snapshot{
+		GithubRunId: "",
+		Time:        time.Now(),
+		Processes:   processes,
+	}, nil
 }

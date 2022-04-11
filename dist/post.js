@@ -5982,14 +5982,11 @@ var require_artifact_client2 = __commonJS({
 
 // js/post.js
 var import_child_process = require("child_process");
-var import_artifact = __toESM(require_artifact_client2(), 1);
+var import_artifact = __toESM(require_artifact_client2());
 (async () => {
-  console.log("post 1");
-  (0, import_child_process.execSync)(`ls -lh /tmp 1>&2`);
   (0, import_child_process.execSync)(`gha-stats stop 1>&2`);
   const client = import_artifact.default.create();
   const result = await client.uploadArtifact("gha-stats", ["/tmp/gha.log"], "/tmp");
-  console.log("post 2");
 })();
 /*!
  * Tmp
