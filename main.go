@@ -7,6 +7,15 @@ import (
 	"github.com/aidansteele/gha-stats/toposort"
 	"github.com/sevlyar/go-daemon"
 	"github.com/shirou/gopsutil/v3/process"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/exporters/otlp/otlptrace"
+	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc"
+	"go.opentelemetry.io/otel/propagation"
+	"go.opentelemetry.io/otel/sdk/resource"
+	sdktrace "go.opentelemetry.io/otel/sdk/trace"
+	semconv "go.opentelemetry.io/otel/semconv/v1.7.0"
+	"google.golang.org/grpc/credentials"
 	"io/ioutil"
 	"os"
 	"sort"
@@ -50,8 +59,63 @@ func start() (*daemon.Context, bool) {
 	return dctx, d != nil
 }
 
+func setupOtel(ctx context.Context) (func(ctx context.Context) error, error) {
+	exp, err := newExporter(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("setting up otel exporter: %w", err)
+	}
+
+	tp := newTraceProvider(exp, "gha-stats")
+
+	otel.SetTracerProvider(tp)
+	otel.SetTextMapPropagator(
+		propagation.NewCompositeTextMapPropagator(
+			propagation.TraceContext{},
+			propagation.Baggage{},
+		),
+	)
+
+	return tp.ForceFlush, nil
+}
+
+func newExporter(ctx context.Context) (*otlptrace.Exporter, error) {
+	opts := []otlptracegrpc.Option{
+		otlptracegrpc.WithEndpoint("api.honeycomb.io:443"),
+		otlptracegrpc.WithHeaders(map[string]string{
+			"x-honeycomb-team":    os.Getenv("HONEYCOMB_API_KEY"),
+			"x-honeycomb-dataset": "gha-stats",
+		}),
+		otlptracegrpc.WithTLSCredentials(credentials.NewClientTLSFromCert(nil, "")),
+	}
+
+	client := otlptracegrpc.NewClient(opts...)
+	return otlptrace.New(ctx, client)
+}
+
+func newTraceProvider(exp *otlptrace.Exporter, serviceName string) *sdktrace.TracerProvider {
+	// The service.name attribute is required.
+	res := resource.NewWithAttributes(
+		semconv.SchemaURL,
+		semconv.ServiceNameKey.String(serviceName),
+	)
+
+	return sdktrace.NewTracerProvider(
+		sdktrace.WithSampler(sdktrace.AlwaysSample()),
+		sdktrace.WithBatcher(exp),
+		sdktrace.WithResource(res),
+		//sdktrace.WithIDGenerator(xray.NewIDGenerator()),
+	)
+}
+
 func run(interval time.Duration) {
 	ctx := context.Background()
+
+	flush, err := setupOtel(ctx)
+	if err != nil {
+		panic(err)
+	}
+
+	defer flush(ctx)
 
 	for {
 		time.Sleep(interval)
@@ -112,6 +176,22 @@ func main() {
 }
 
 func getSnapshot(ctx context.Context) (*snapshot, error) {
+	S := attribute.String
+	I := attribute.Int64
+	F := attribute.Float64
+
+	tracer := otel.GetTracerProvider().Tracer("github.com/aidansteele/gha-stats")
+	ctx, span := tracer.Start(ctx, "snapshot")
+	span.SetAttributes(
+		S("gha.run-id", os.Getenv("GITHUB_RUN_ID")),
+		S("gha.actor", os.Getenv("GITHUB_ACTOR")),
+		S("gha.repository", os.Getenv("GITHUB_REPOSITORY")),
+		S("gha.workflow-name", os.Getenv("GITHUB_WORKFLOW")),
+		S("gha.job-name", os.Getenv("GITHUB_JOB")),
+	)
+
+	defer span.End()
+
 	procs, err := process.Processes()
 	if err != nil {
 		return nil, fmt.Errorf("getting processes: %w", err)
@@ -122,30 +202,45 @@ func getSnapshot(ctx context.Context) (*snapshot, error) {
 	topo := toposort.NewGraph[int32](len(procs))
 
 	for idx, proc := range procs {
-		pid := proc.Pid
-		ppid, _ := proc.Ppid()
-		name, _ := proc.Name()
-		cpu, _ := proc.CPUPercent()
-		mem, _ := proc.MemoryPercent()
-		exe, _ := proc.Exe()
-		memInfo, _ := proc.MemoryInfo()
-		rss := memInfo.RSS
+		func(idx int, proc *process.Process) {
+			_, span := tracer.Start(ctx, "process")
+			defer span.End()
 
-		processes[idx] = processSnapshot{
-			processIdentity: processIdentity{
-				Pid:  pid,
-				Ppid: ppid,
-				Name: name,
-				Exe:  exe,
-			},
-			CpuPct: cpu,
-			Mem:    rss,
-			MemPct: mem,
-		}
+			pid := proc.Pid
+			ppid, _ := proc.Ppid()
+			name, _ := proc.Name()
+			exe, _ := proc.Exe()
+			cpu, _ := proc.CPUPercent()
+			mem, _ := proc.MemoryPercent()
+			memInfo, _ := proc.MemoryInfo()
+			rss := memInfo.RSS
 
-		byPid[pid] = &processes[idx]
-		topo.AddNodes(pid)
-		topo.AddEdge(pid, ppid)
+			span.SetAttributes(
+				S("process.pid", fmt.Sprintf("%d", pid)),
+				S("process.ppid", fmt.Sprintf("%d", ppid)),
+				S("process.name", name),
+				S("process.exe", exe),
+				F("process.cpu.pct", cpu),
+				F("process.mem.pct", float64(mem)),
+				I("process.mem.rss", int64(rss)),
+			)
+
+			processes[idx] = processSnapshot{
+				processIdentity: processIdentity{
+					Pid:  pid,
+					Ppid: ppid,
+					Name: name,
+					Exe:  exe,
+				},
+				CpuPct: cpu,
+				Mem:    rss,
+				MemPct: mem,
+			}
+
+			byPid[pid] = &processes[idx]
+			topo.AddNodes(pid)
+			topo.AddEdge(pid, ppid)
+		}(idx, proc)
 	}
 
 	sorted, ok := topo.Toposort()

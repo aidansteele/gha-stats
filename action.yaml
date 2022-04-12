@@ -4,3 +4,14 @@ runs:
   using: node16
   main: dist/start.js
   post: dist/post.js
+inputs:
+  honeycombApiKey:
+    required: true
+    description: API key for Honeycomb.io
+  honeycombDataset:
+    required: true
+    description: Dataset for Honeycomb.io
+  interval:
+    required: false
+    default: 5s
+    description: Interval between checking process metrics
