@@ -1302,7 +1302,7 @@ var core = require_core();
 var apiKey = core.getInput("honeycombApiKey", { required: true });
 var dataset = core.getInput("honeycombDataset", { required: true });
 var interval = core.getInput("interval", { required: false }) || "5s";
-var url = "https://github.com/aidansteele/gha-stats/releases/download/v0.2.0/gha-stats_0.2.0_linux_amd64.tar.gz";
+var url = "https://github.com/aidansteele/gha-stats/releases/download/v0.3.0/gha-stats_0.3.0_linux_amd64.tar.gz";
 execSync(`curl -o /tmp/gha-stats.tgz -L ${url}`);
 execSync(`sudo tar -C /usr/bin -xvf /tmp/gha-stats.tgz`);
 execSync(`gha-stats start ${interval}`, {
