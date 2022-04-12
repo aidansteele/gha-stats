@@ -5972,10 +5972,13 @@ var require_artifact_client2 = __commonJS({
 var { execSync } = require("child_process");
 var artifact = require_artifact_client2();
 (async () => {
-  execSync(`ls -lh /tmp 1>&2`);
-  execSync(`gha-stats stop 1>&2`);
-  const client = artifact.create();
-  const result = await client.uploadArtifact("gha-stats", ["/tmp/gha.log"], "/tmp");
+  try {
+    execSync(`ls -lh /tmp 1>&2`);
+    execSync(`gha-stats stop 1>&2`);
+  } finally {
+    const client = artifact.create();
+    const result = await client.uploadArtifact("gha-stats", ["/tmp/gha.log"], "/tmp");
+  }
 })();
 /*!
  * Tmp

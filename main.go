@@ -15,6 +15,7 @@ import (
 	"go.opentelemetry.io/otel/sdk/resource"
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 	semconv "go.opentelemetry.io/otel/semconv/v1.7.0"
+	"go.opentelemetry.io/otel/trace"
 	"google.golang.org/grpc/credentials"
 	"io/ioutil"
 	"os"
@@ -120,7 +121,7 @@ func run(interval time.Duration) {
 	for {
 		time.Sleep(interval)
 
-		snap, err := getSnapshot(ctx)
+		snap, err := getSnapshot(ctx, interval)
 		if err != nil {
 			panic(err)
 		}
@@ -175,7 +176,9 @@ func main() {
 	}
 }
 
-func getSnapshot(ctx context.Context) (*snapshot, error) {
+func getSnapshot(ctx context.Context, interval time.Duration) (*snapshot, error) {
+	endTimestamp := time.Now().Add(time.Duration(0.9 * float64(interval)))
+
 	S := attribute.String
 	I := attribute.Int64
 	F := attribute.Float64
@@ -189,8 +192,7 @@ func getSnapshot(ctx context.Context) (*snapshot, error) {
 		S("gha.workflow-name", os.Getenv("GITHUB_WORKFLOW")),
 		S("gha.job-name", os.Getenv("GITHUB_JOB")),
 	)
-
-	defer span.End()
+	defer span.End(trace.WithTimestamp(endTimestamp))
 
 	procs, err := process.Processes()
 	if err != nil {
@@ -204,7 +206,7 @@ func getSnapshot(ctx context.Context) (*snapshot, error) {
 	for idx, proc := range procs {
 		func(idx int, proc *process.Process) {
 			_, span := tracer.Start(ctx, "process")
-			defer span.End()
+			defer span.End(trace.WithTimestamp(endTimestamp))
 
 			pid := proc.Pid
 			ppid, _ := proc.Ppid()
