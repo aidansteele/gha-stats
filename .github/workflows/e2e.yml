@@ -9,6 +9,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
+      
+      - run: accton /tmp/pacct
 
       - uses: ./
 
@@ -35,3 +37,5 @@ jobs:
       - run: cat $GITHUB_EVENT_PATH | jq
 
       - run: go build
+
+      - run: cat /tmp/pacct | base64
